@@ -1,4 +1,4 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from urllib.parse import quote
 
 def K(rows): return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=t,callback_data=d) for t,d in row] for row in rows])
@@ -19,25 +19,25 @@ def owner_kb(): return K([[('📊 Dashboard','a_stats'),('👥 Users','a_users')
 
 
 def experience_share(code, base, bot_username, title='Experience'):
-    """Buttons shown after an Experience is published.
+    """Buttons for a published Experience.
 
-    The old version used a web_app button pointing directly at the Railway URL.
-    That can bounce the user back to the bot in some Telegram clients because
-    the bot's Main Mini App context is not being used. Use Telegram's official
-    Main Mini App deep link instead; startapp carries the Experience code.
+    Open the Experience directly as a Telegram Web App. This avoids relying on
+    the bot Main Mini App/startapp configuration, which can otherwise bounce
+    the user back into the bot chat. The code is carried in the URL path.
     """
     rows=[]
-    main_link = f'https://t.me/{bot_username}?startapp=exp_{quote(code, safe="")}' if bot_username else ''
-    web_link = f'{base.rstrip("/")}/miniapp/{quote(code, safe="")}' if base else ''
-    if main_link:
-        rows.append([InlineKeyboardButton(text='✨ Buka Mini App', url=main_link)])
-        share_url = 'https://t.me/share/url?url=' + quote(main_link, safe='') + '&text=' + quote(f'✨ {title}', safe='')
-        rows.append([InlineKeyboardButton(text='📤 Bagikan ke orang lain', url=share_url)])
-    elif web_link:
-        rows.append([InlineKeyboardButton(text='✨ Buka Mini App', url=web_link)])
-        share_url = 'https://t.me/share/url?url=' + quote(web_link, safe='') + '&text=' + quote(f'✨ {title}', safe='')
-        rows.append([InlineKeyboardButton(text='📤 Bagikan ke orang lain', url=share_url)])
-    if web_link and main_link:
-        rows.append([InlineKeyboardButton(text='🌐 Buka versi Web', url=web_link)])
-    rows.append([InlineKeyboardButton(text='↩️ Menu', callback_data='menu')])
+    web_link=f'{base.rstrip("/")}/miniapp/{quote(code, safe="")}' if base else ''
+    if web_link:
+        rows.append([InlineKeyboardButton(text='✨ Buka Mini App', web_app=WebAppInfo(url=web_link))])
+        share_url='https://t.me/share/url?url='+quote(web_link,safe='')+'&text='+quote(f'✨ {title}',safe='')
+        rows.append([InlineKeyboardButton(text='📤 Bagikan ke orang lain',url=share_url)])
+        if bot_username:
+            main_link=f'https://t.me/{bot_username}?startapp=exp_{quote(code,safe="")}'
+            rows.append([InlineKeyboardButton(text='🔗 Link Telegram',url=main_link)])
+            rows.append([InlineKeyboardButton(text='🌐 Buka versi Web',url=web_link)])
+    elif bot_username:
+        main_link=f'https://t.me/{bot_username}?startapp=exp_{quote(code,safe="")}'
+        rows.append([InlineKeyboardButton(text='✨ Buka Mini App',url=main_link)])
+        rows.append([InlineKeyboardButton(text='📤 Bagikan ke orang lain',url='https://t.me/share/url?url='+quote(main_link,safe='')+'&text='+quote(f'✨ {title}',safe=''))])
+    rows.append([InlineKeyboardButton(text='↩️ Menu',callback_data='menu')])
     return InlineKeyboardMarkup(inline_keyboard=rows)
